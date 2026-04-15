@@ -70,30 +70,25 @@ impl Render for Clock {
             .flex_col()
             .justify_center()
             .items_center()
-            .children(
-                [hour, minute]
-                    .into_iter()
-                    .enumerate()
-                    .map(|(index, content)| {
-                        div()
+            .children([hour, minute].map(|content| {
+                div()
+                    .w_full()
+                    .flex()
+                    .justify_center()
+                    .paddings(Edges {
+                        top: text_size / 8.,
+                        left: px(0.),
+                        right: px(0.),
+                        bottom: text_size / 8.,
+                    })
+                    .child(
+                        Label::new(content)
                             .w_full()
-                            .flex()
-                            .justify_center()
-                            .paddings(Edges {
-                                top: text_size / 8.,
-                                left: px(0.),
-                                right: px(0.),
-                                bottom: text_size / 8.,
-                            })
-                            .child(
-                                Label::new(content)
-                                    .w_full()
-                                    .text_center()
-                                    .font_bold()
-                                    .text_size(text_size)
-                                    .text_color(cx.theme().border),
-                            )
-                    }),
-            )
+                            .text_center()
+                            .font_bold()
+                            .text_size(text_size)
+                            .text_color(cx.theme().border),
+                    )
+            }))
     }
 }

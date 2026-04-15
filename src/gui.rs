@@ -31,7 +31,11 @@ impl Render for RootView {
             .flex_col()
             .justify_center()
             .items_center()
-            .child(self.clock.clone())
+            .children([
+                div().w_full().h_1_3(),
+                div().w_full().h_1_3().child(self.clock.clone()),
+                div().w_full().h_1_3(),
+            ])
     }
 }
 
