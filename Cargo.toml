@@ -7,9 +7,11 @@ edition = "2024"
 gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", default-features = false, features = ["wayland"] }
 gpui_platform = { git = "https://github.com/zed-industries/zed", default-features = false, package = "gpui_platform", features = ["wayland"] }
 gpui_linux = { git = "https://github.com/zed-industries/zed", default-features = false, package = "gpui_linux", features = ["wayland"] }
+gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 anyhow = "1.0.102"
 niri-ipc = "25.11.0"
 smol = "2.0.2"
+chrono = "0.4.42"
 
 [profile.dev]
 opt-level = 1

@@ -33,6 +33,10 @@
             libx11
             libxcb
 
+            glib
+            gtk4
+            gtk3
+
             # vulkan
             vulkan-loader
 

@@ -2,6 +2,7 @@ use std::sync::{LazyLock, RwLock};
 
 use gpui::{Pixels, Size};
 
+pub mod component;
 pub mod gui;
 pub mod ipc;
 
