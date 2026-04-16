@@ -1,11 +1,35 @@
-use std::path::PathBuf;
+use std::sync::Arc;
 
 use gpui_component::{ActiveTheme, Root, Theme, ThemeRegistry};
+use image::Frame;
 use niri_ipc::Event;
 use smol::channel::Receiver;
 
 use gpui::{layer_shell::Anchor, *};
+use gpui_component_assets::Assets;
 use gpui_platform::application;
+
+const ICON_BYTES: [&[u8]; 2] = [
+    include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/assets/catppuccin0.png"
+    )),
+    include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/assets/catppuccin1.png"
+    )),
+];
+
+fn decode_png(bytes: &[u8]) -> Arc<RenderImage> {
+    let mut rgba = image::load_from_memory_with_format(bytes, image::ImageFormat::Png)
+        .expect("Failed to decode embedded PNG")
+        .into_rgba8();
+    // RGBA → BGRA
+    for pixel in rgba.chunks_exact_mut(4) {
+        pixel.swap(0, 2);
+    }
+    Arc::new(RenderImage::new(vec![Frame::new(rgba)]))
+}
 
 use crate::{
     WINDOW_SIZE, WORKSPACES,
@@ -18,18 +42,31 @@ const GPUI_COMPONENT_LINUX_ROOT_WINDOW_SHADOW_SIZE: Pixels = px(14.0);
 struct RootView {
     workspaces: Entity<Workspaces>,
     clock: Entity<Clock>,
+    icon_index: usize,
+    icons: [Arc<RenderImage>; 2],
 }
 
 impl RootView {
     fn new(cx: &mut Context<Self>) -> Self {
         let workspaces = cx.new(|cx| Workspaces::new(cx));
         let clock = cx.new(|cx| Clock::new(cx));
-        RootView { workspaces, clock }
+        RootView {
+            workspaces,
+            clock,
+            icon_index: 1,
+            icons: [decode_png(ICON_BYTES[0]), decode_png(ICON_BYTES[1])],
+        }
     }
 }
 
 impl Render for RootView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut width = px(20.);
+        {
+            if let Some(size) = read_global(&WINDOW_SIZE) {
+                width = size.width * 0.02;
+            }
+        }
         div()
             .size_full()
             .bg(cx.theme().primary_foreground)
@@ -45,6 +82,19 @@ impl Render for RootView {
                     .flex_col()
                     .justify_start()
                     .items_center()
+                    .child(div().w(width).h(px(8.)))
+                    .child(
+                        img(self.icons[self.icon_index].clone())
+                            .w(width)
+                            .h(width)
+                            .object_fit(ObjectFit::Contain)
+                            .on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener(|this, _event, _window, _cx| {
+                                    this.icon_index = (this.icon_index + 1) % 2;
+                                }),
+                            ),
+                    )
                     .child(self.workspaces.clone()),
                 div().w_full().h_1_3().child(self.clock.clone()),
                 div().w_full().h_1_3(),
@@ -66,6 +116,9 @@ fn open_window(app: &mut AsyncApp) {
             })),
             window_background: WindowBackgroundAppearance::Transparent,
             window_decorations: None,
+            is_movable: false,
+            is_resizable: false,
+            focus: false,
             kind: WindowKind::LayerShell(layer_shell::LayerShellOptions {
                 namespace: "gbar".to_string(),
                 layer: layer_shell::Layer::Top,
@@ -91,11 +144,14 @@ fn open_window(app: &mut AsyncApp) {
 
 pub fn task(rx: Receiver<Event>) -> impl FnOnce() -> anyhow::Result<()> + Send {
     move || {
-        application().run(move |app| {
+        application().with_assets(Assets).run(move |app| {
             gpui_component::init(app);
             let theme_name = SharedString::from("Catppuccin Custom");
-            // Load and watch themes from ./themes directory
-            if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), app, move |cx| {
+            let theme_dir = dirs::home_dir()
+                .expect("Failed to get home directory")
+                .join(".config/gbar/themes");
+            // Load and watch themes from ~/.config/gbar/themes directory
+            if let Err(err) = ThemeRegistry::watch_dir(theme_dir, app, move |cx| {
                 if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
                     Theme::global_mut(cx).apply_config(&theme);
                 }

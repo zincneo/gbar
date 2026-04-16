@@ -60,7 +60,7 @@ impl Render for Clock {
         let mut text_size = px(8.);
         {
             if let Some(size) = read_global(&WINDOW_SIZE) {
-                text_size = (size.width * 0.0125).max(text_size);
+                text_size = (size.width * 0.015).max(text_size);
             }
         }
 
@@ -83,6 +83,7 @@ impl Render for Clock {
                     })
                     .child(
                         Label::new(content)
+                            .font_family("Liberation Mono")
                             .w_full()
                             .text_center()
                             .font_bold()
@@ -181,6 +182,7 @@ impl Render for Workspaces {
                     .w(width)
                     .h(width)
                     .rounded(width)
+                    .font_family("Maple Mono NF CN")
                     .text_size(text_size)
                     .text_center()
                     .when_else(
