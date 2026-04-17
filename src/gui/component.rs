@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, u8};
 
 use chrono::Local;
 use gpui::{prelude::FluentBuilder, *};
@@ -228,7 +228,7 @@ impl Render for Cpu {
                 top: px(4.),
                 right: px(4.),
                 left: px(4.),
-                bottom: px(24.),
+                bottom: px(4.),
             })
             .w(width)
             .h(width)
@@ -244,5 +244,86 @@ impl Render for Cpu {
                     .arg("btop")
                     .spawn();
             })
+    }
+}
+
+pub struct Battery {
+    tx: Sender<()>,
+}
+
+impl Battery {
+    pub fn new(cx: &mut Context<Self>) -> Self {
+        let (tx, rx) = smol::channel::unbounded::<()>();
+
+        cx.spawn(async move |this, cx| {
+            loop {
+                let should_stop = smol::future::or(
+                    async {
+                        let _ = rx.recv().await;
+                        true
+                    },
+                    async {
+                        cx.background_executor()
+                            .timer(Duration::from_secs(120))
+                            .await;
+                        false
+                    },
+                )
+                .await;
+
+                if should_stop {
+                    break;
+                }
+
+                if this.update(cx, |_, cx| cx.notify()).is_err() {
+                    break;
+                }
+            }
+        })
+        .detach();
+
+        Battery { tx }
+    }
+}
+
+impl Drop for Battery {
+    fn drop(&mut self) {
+        let _ = self.tx.send_blocking(());
+    }
+}
+
+impl Render for Battery {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let colors = cx.theme().colors;
+        let (mut icon_name, mut color) = (IconName::BatteryWarning, colors.red);
+        let manager = battery::Manager::new();
+        if let Ok(manager) = manager
+            && let Ok(batteries) = manager.batteries()
+            && let Some(battery) = batteries.into_iter().next()
+            && let Ok(battery) = battery
+        {
+            (icon_name, color) = match (battery.state_of_charge().value * 100.) as u8 {
+                0..=10 => (IconName::BatteryWarning, colors.red_light),
+                11..=33 => (IconName::BatteryLow, colors.red),
+                34..=70 => (IconName::BatteryMedium, colors.green),
+                71..=u8::MAX => (IconName::BatteryFull, colors.green_light),
+            };
+        }
+        let mut width = px(20.);
+        {
+            if let Some(size) = read_global(&WINDOW_SIZE) {
+                width = size.width * 0.02;
+            }
+        }
+        div()
+            .margins(Edges {
+                top: px(4.),
+                right: px(4.),
+                left: px(4.),
+                bottom: px(24.),
+            })
+            .w(width)
+            .h(width)
+            .child(Icon::new(icon_name).w(width).h(width).text_color(color))
     }
 }

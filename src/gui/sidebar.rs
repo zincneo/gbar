@@ -1,5 +1,5 @@
 use super::component::{Clock, Cpu, Workspaces};
-use crate::{WINDOW_SIZE, read_global};
+use crate::{WINDOW_SIZE, gui::component::Battery, read_global};
 use gpui::{layer_shell::Anchor, *};
 use gpui_component::{ActiveTheme, Root};
 
@@ -59,6 +59,7 @@ pub struct RootView {
     workspaces: Entity<Workspaces>,
     clock: Entity<Clock>,
     cpu: Entity<Cpu>,
+    battery: Entity<Battery>,
     icon_index: usize,
     icons: [Arc<RenderImage>; 2],
 }
@@ -68,9 +69,12 @@ impl RootView {
         let workspaces = cx.new(|cx| Workspaces::new(cx));
         let clock = cx.new(|cx| Clock::new(cx));
         let cpu = cx.new(|cx| Cpu::new(cx));
+        let battery = cx.new(|cx| Battery::new(cx));
+
         RootView {
             workspaces,
             clock,
+            battery,
             icon_index: 1,
             cpu,
             icons: [
@@ -126,7 +130,8 @@ impl Render for RootView {
                     .flex_col()
                     .justify_end()
                     .items_center()
-                    .child(self.cpu.clone()),
+                    .child(self.cpu.clone())
+                    .child(self.battery.clone()),
             ])
     }
 }
