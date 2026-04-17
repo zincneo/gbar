@@ -1,6 +1,6 @@
 use gpui::{px, size};
 use niri_ipc::socket::Socket;
-use niri_ipc::{Event, Request, Response};
+use niri_ipc::{Action, Event, Request, Response};
 use smol::channel::Sender;
 
 use crate::{WINDOW_SIZE, write_global};
@@ -38,5 +38,14 @@ pub fn set_window_size() -> anyhow::Result<()> {
                 true
             });
     }
+    Ok(())
+}
+
+pub fn set_active_workspace(id: u64) -> anyhow::Result<()> {
+    let mut socket = Socket::connect()?;
+    let request = Request::Action(Action::FocusWorkspace {
+        reference: niri_ipc::WorkspaceReferenceArg::Id(id),
+    });
+    let _ = socket.send(request)?;
     Ok(())
 }

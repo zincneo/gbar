@@ -173,29 +173,35 @@ impl Render for Workspaces {
             .justify_around()
             .items_center()
             .children(workspaces.into_iter().map(|workspace| {
-                Label::new(workspace.id.to_string())
-                    .flex()
-                    .flex_col()
-                    .items_center()
-                    .justify_center()
-                    .border_2()
+                let id = workspace.id;
+                div()
                     .w(width)
                     .h(width)
-                    .rounded(width)
-                    .font_family("Maple Mono NF CN")
-                    .text_size(text_size)
-                    .text_center()
-                    .when_else(
-                        workspace.is_focused,
-                        |label| {
-                            label
-                                .bg(cx.theme().colors.red)
-                                .border_color(cx.theme().colors.red_light)
-                        },
-                        |label| {
-                            label.bg(rgb(0x363a4f))
-                            // .border_color(cx.theme().colors.border)
-                        },
+                    .on_mouse_down(MouseButton::Left, move |_, _, _| {
+                        let _ = crate::ipc::set_active_workspace(id);
+                    })
+                    .child(
+                        Label::new(workspace.id.to_string())
+                            .flex()
+                            .flex_col()
+                            .items_center()
+                            .justify_center()
+                            .border_2()
+                            .w(width)
+                            .h(width)
+                            .rounded(width)
+                            .font_family("Maple Mono NF CN")
+                            .text_size(text_size)
+                            .text_center()
+                            .when_else(
+                                workspace.is_focused,
+                                |label| {
+                                    label
+                                        .bg(cx.theme().colors.red)
+                                        .border_color(cx.theme().colors.red_light)
+                                },
+                                |label| label.bg(rgb(0x363a4f)),
+                            ),
                     )
             }))
     }
