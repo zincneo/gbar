@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use chrono::Local;
 use gpui::{prelude::FluentBuilder, *};
-use gpui_component::{ActiveTheme, StyledExt, label::Label};
+use gpui_component::{ActiveTheme, Icon, IconName, StyledExt, label::Label};
 use smol::channel::Sender;
 
 use crate::{WINDOW_SIZE, WORKSPACES, WORKSPACES_NOTIFY_TX, read_global, write_global};
@@ -204,5 +204,45 @@ impl Render for Workspaces {
                             ),
                     )
             }))
+    }
+}
+
+pub struct Cpu;
+
+impl Cpu {
+    pub fn new(_cx: &mut Context<Self>) -> Self {
+        Cpu
+    }
+}
+
+impl Render for Cpu {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut width = px(20.);
+        {
+            if let Some(size) = read_global(&WINDOW_SIZE) {
+                width = size.width * 0.02;
+            }
+        }
+        div()
+            .margins(Edges {
+                top: px(4.),
+                right: px(4.),
+                left: px(4.),
+                bottom: px(24.),
+            })
+            .w(width)
+            .h(width)
+            .child(
+                Icon::new(IconName::Cpu)
+                    .w(width)
+                    .h(width)
+                    .text_color(cx.theme().colors.blue),
+            )
+            .on_mouse_down(MouseButton::Left, |_, _, _| {
+                let _ = std::process::Command::new("kitty")
+                    .arg("-e")
+                    .arg("btop")
+                    .spawn();
+            })
     }
 }

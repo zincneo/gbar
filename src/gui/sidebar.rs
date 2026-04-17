@@ -1,3 +1,5 @@
+use super::component::{Clock, Cpu, Workspaces};
+use crate::{WINDOW_SIZE, read_global};
 use gpui::{layer_shell::Anchor, *};
 use gpui_component::{ActiveTheme, Root};
 
@@ -53,13 +55,10 @@ pub fn open_window(app: &mut AsyncApp) {
     .expect("Failed to open window");
 }
 
-use crate::{WINDOW_SIZE, read_global};
-
-use super::component::{Clock, Workspaces};
-
 pub struct RootView {
     workspaces: Entity<Workspaces>,
     clock: Entity<Clock>,
+    cpu: Entity<Cpu>,
     icon_index: usize,
     icons: [Arc<RenderImage>; 2],
 }
@@ -68,10 +67,12 @@ impl RootView {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let workspaces = cx.new(|cx| Workspaces::new(cx));
         let clock = cx.new(|cx| Clock::new(cx));
+        let cpu = cx.new(|cx| Cpu::new(cx));
         RootView {
             workspaces,
             clock,
             icon_index: 1,
+            cpu,
             icons: [
                 super::decode_png(ICON_BYTES[0]),
                 super::decode_png(ICON_BYTES[1]),
@@ -118,7 +119,14 @@ impl Render for RootView {
                     )
                     .child(self.workspaces.clone()),
                 div().w_full().h_1_3().child(self.clock.clone()),
-                div().w_full().h_1_3(),
+                div()
+                    .w_full()
+                    .h_1_3()
+                    .flex()
+                    .flex_col()
+                    .justify_end()
+                    .items_center()
+                    .child(self.cpu.clone()),
             ])
     }
 }
