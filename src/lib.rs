@@ -4,7 +4,6 @@ use gpui::{Pixels, Size};
 use niri_ipc::Workspace;
 use smol::channel::Sender;
 
-pub mod component;
 pub mod gui;
 pub mod ipc;
 
