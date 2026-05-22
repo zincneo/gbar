@@ -52,7 +52,7 @@ impl Drop for Workspaces {
 impl Render for Workspaces {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut workspaces = read_global(&WORKSPACES).unwrap_or_default();
-        workspaces.sort_by_key(|ele| ele.id);
+        workspaces.sort_by_key(|ele| ele.idx);
         let mut text_size = px(8.);
         let mut height = px(20.);
         let mut width = px(20.);
@@ -85,7 +85,7 @@ impl Render for Workspaces {
                         let _ = crate::ipc::set_active_workspace(id);
                     })
                     .child(
-                        Label::new(workspace.id.to_string())
+                        Label::new(workspace.idx.to_string())
                             .flex()
                             .flex_col()
                             .items_center()
